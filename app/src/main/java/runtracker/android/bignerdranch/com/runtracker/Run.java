@@ -5,9 +5,19 @@ import java.util.Date;
 public class Run
 {
     private Date startDate;
+    private long id;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public Run()
     {
+        id = -1;
         startDate = new Date();
     }
 
