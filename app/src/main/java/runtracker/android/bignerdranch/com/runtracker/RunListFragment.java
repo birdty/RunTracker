@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -15,10 +17,33 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class RunListFragment extends ListFragment {
+public class RunListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private RunDatabaseHelper.RunCursor cursor;
     private static final int REQUEST_NEW_RUN = 0;
+
+
+
+    // loader callbacks
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args)
+    {
+        return new RunListCursorLoader(getActivity());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor)
+    {
+        RunCursorAdapter adapter = new RunCursorAdapter(getActivity(), (RunDatabaseHelper.RunCursor)cursor);
+
+        setListAdapter(adapter);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader)
+    {
+        setListAdapter(null);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -27,11 +52,7 @@ public class RunListFragment extends ListFragment {
 
         setHasOptionsMenu(true);
 
-        cursor = RunManager.get(getActivity()).queryRuns();
-
-        RunListFragment.RunCursorAdapter adapter = new RunListFragment.RunCursorAdapter(getActivity(), cursor);
-
-        setListAdapter(adapter);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -60,8 +81,7 @@ public class RunListFragment extends ListFragment {
     {
         if ( REQUEST_NEW_RUN == requestCode )
         {
-            cursor.requery();
-            ((RunCursorAdapter)getListAdapter()).notifyDataSetChanged();
+            getLoaderManager().restartLoader(0, null, this);
         }
     }
 
@@ -98,13 +118,6 @@ public class RunListFragment extends ListFragment {
     }
 
     @Override
-    public void onDestroy()
-    {
-        cursor.close();
-        super.onDestroy();
-    }
-
-    @Override
     public void onListItemClick(ListView l, View v, int position, long id)
     {
         Intent i = new Intent(getActivity(), RunActivity.class);
@@ -112,5 +125,18 @@ public class RunListFragment extends ListFragment {
         startActivity(i);
     }
 
+    private static class RunListCursorLoader extends SQLiteCursorLoader {
+
+        public RunListCursorLoader(Context context)
+        {
+            super(context);
+        }
+
+        @Override
+        protected Cursor loadCursor()
+        {
+            return RunManager.get(getContext()).queryRuns();
+        }
+    }
 
 }
